@@ -64,20 +64,15 @@ public class InternetManager extends BroadcastReceiver {
         if (!connectionReceiverListeners.contains(listener))
             connectionReceiverListeners.add(listener);
     }
-
     @Override
     public void onReceive(final Context context, final Intent intent) {
         boolean connected = false;
         if (intent.getAction().equals(ConnectivityManager.CONNECTIVITY_ACTION)) {
-            NetworkInfo networkInfo = intent.getParcelableExtra(ConnectivityManager.EXTRA_NETWORK_INFO);
-            if (networkInfo != null && networkInfo.getDetailedState() == NetworkInfo.DetailedState.CONNECTED) {
-                connected = true;
-                BRPeerManager.getInstance().networkChanged(true);
-            } else if (networkInfo != null && networkInfo.getDetailedState() == NetworkInfo.DetailedState.DISCONNECTED) {
-                BRPeerManager.getInstance().networkChanged(false);
-                connected = false;
-            }
-
+            ConnectivityManager connectivityManager
+                    = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+            connected =  activeNetworkInfo != null && activeNetworkInfo.isConnected();
+            BRPeerManager.getInstance().networkChanged(connected);
             BREventManager.getInstance().pushEvent(connected ? "reachability.isReachble" : "reachability.isNotReachable");
             for (ConnectionReceiverListener listener : connectionReceiverListeners) {
                 listener.onConnectionChanged(connected);
